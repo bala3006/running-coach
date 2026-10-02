@@ -10,7 +10,7 @@ Requirements: Python 3.11+ and [Ollama](https://ollama.com/). From the repositor
 ./scripts/run.sh
 ```
 
-The script creates `.venv` and `.env` if needed, installs runtime dependencies, and starts the app on <http://127.0.0.1:8000>. To use a different port, set `PORT`, for example `PORT=8010 ./scripts/run.sh`. Choose an installed multilingual, tool-calling model by setting `OLLAMA_MODEL` in `.env`; the example defaults to `qwen3.8:latest`. Pull it with `ollama pull qwen3.8:latest` if it is not installed.
+The script creates `.venv` and `.env` if needed, installs runtime dependencies, and starts the app on <http://127.0.0.1:8000>. To use a different port, set `PORT`, for example `PORT=8010 ./scripts/run.sh`. The default model is `llama3.2:latest`; install it with `ollama pull llama3.2:latest` if needed. Set `OLLAMA_MODEL` in `.env` only if you want to use a different installed model.
 
 Conversation history is stored in `~/.running-coach/coach.sqlite3` and can be moved by setting `RUNNING_COACH_DB`.
 
@@ -20,7 +20,7 @@ Open the [architecture page](docs/architecture.html) directly, or while the app 
 
 ## Coach Eklavya's voice
 
-The default is English with brief, natural Tamil phrases. Choose English only, Tamil, or Tanglish in the chat controls, and enable **Tamil coach warmth** for a more locally grounded voice. Tamil uses conversational Tamil; Tanglish uses Romanized Tamil. The voice does not assume a particular city, background, or running culture, and keeps training advice and units clear.
+The default is warm English with light, natural Tanglish when it fits; the coach does not add scripted Tamil dialogue. Choose English only, Tamil, or Tanglish in the chat controls, and enable **Tamil coach warmth** for a more locally grounded voice. Tamil uses conversational Tamil; Tanglish uses Romanized Tamil. The voice does not assume a particular city, background, or running culture, and keeps training advice and units clear.
 
 ## Integrations
 

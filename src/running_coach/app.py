@@ -43,7 +43,7 @@ async def architecture() -> FileResponse:
 @app.get("/api/health")
 async def health() -> dict[str, str | bool]:
     base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
-    model = os.getenv("OLLAMA_MODEL", "qwen3:8b")
+    model = os.getenv("OLLAMA_MODEL", "llama3.2:latest")
     try:
         async with httpx.AsyncClient(timeout=2) as client:
             response = await client.get(f"{base_url}/api/tags")

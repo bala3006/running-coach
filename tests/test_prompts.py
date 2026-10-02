@@ -8,12 +8,14 @@ def test_prompt_preserves_requested_language(language: str) -> None:
     assert build_system_prompt(language, tamil_voice=False)
 
 
-def test_english_tamil_mode_keeps_coaching_advice_in_english() -> None:
+def test_english_tamil_mode_uses_friendly_natural_tanglish() -> None:
     prompt = build_system_prompt("en-ta", tamil_voice=True)
 
-    assert "clear, warm English only" in prompt
-    assert "vetted Tamil phrase" in prompt
-    assert "Do not invent, quote, transliterate, or translate Tamil text" in prompt
+    assert "clear, warm English" in prompt
+    assert "light, natural Tanglish" in prompt
+    assert "Romanized Tamil" in prompt
+    assert "Do not force catchphrases" in prompt
+    assert "vetted phrase" not in prompt
     assert "Do not invent studies, citations, organizations, or guidelines" in prompt
 
 

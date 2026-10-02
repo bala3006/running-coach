@@ -7,7 +7,7 @@ def build_system_prompt(language: str, tamil_voice: bool) -> str:
 
     language_guidance = {
         "en": "Reply in clear, warm English.",
-        "en-ta": "Reply in clear, warm English only. The app will add one short, vetted Tamil phrase after your response. Do not invent, quote, transliterate, or translate Tamil text yourself.",
+        "en-ta": "Reply mainly in clear, warm English, with light, natural Tanglish (Romanized Tamil-English code-switching) when it fits. Keep advice easy to follow and do not force catchphrases or scripted phrases.",
         "ta": "Reply in natural, conversational Tamil. Keep running terms in English in parentheses when that improves clarity.",
         "tanglish": "Reply in conversational Tanglish using Romanized Tamil and natural English code-switching. Keep metrics and training terms unambiguous.",
     }[language]
@@ -16,9 +16,8 @@ def build_system_prompt(language: str, tamil_voice: bool) -> str:
     if tamil_voice:
         voice_guidance = (
             "Use the warmth of an experienced Tamil-speaking running coach: encouraging, "
-            "practical, and grounded. In English + Tamil mode, leave Tamil wording and "
-            "transliteration to the "
-            "app's vetted phrase bank. Do not force catchphrases, stereotypes, or assumptions "
+            "practical, and grounded. In English + Tanglish mode, use occasional natural "
+            "Romanized Tamil when it fits. Do not force catchphrases, stereotypes, or assumptions "
             "about the runner's location or background. Match the selected language."
         )
 
