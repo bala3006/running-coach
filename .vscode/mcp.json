@@ -1,0 +1,16 @@
+{
+  "servers": {
+    "running-coach-strava": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "args": ["-m", "running_coach.mcp.strava_server"],
+      "env": {"PYTHONPATH": "${workspaceFolder}/src"}
+    },
+    "running-coach-sheets": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "args": ["-m", "running_coach.mcp.sheets_server"],
+      "env": {"PYTHONPATH": "${workspaceFolder}/src"}
+    }
+  }
+}
