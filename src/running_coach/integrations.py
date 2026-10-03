@@ -72,16 +72,36 @@ async def get_recent_runs(days: int = 30) -> list[dict]:
     activities = response.json()
     return [
         {
+            "id": str(item.get("id", "")),
             "name": item.get("name"),
             "sport_type": item.get("sport_type", item.get("type")),
             "distance_km": round(item.get("distance", 0) / 1000, 2),
-            "moving_time_minutes": round(item.get("moving_time", 0) / 60),
+                "moving_time_minutes": round(item.get("moving_time", 0) / 60, 2),
             "start_date_local": item.get("start_date_local"),
             "average_heartrate": item.get("average_heartrate"),
+            "elevation_gain_m": item.get("total_elevation_gain"),
+            "descent_m": item.get("total_elevation_loss"),
+            "temperature_c": item.get("average_temp"),
         }
         for item in activities
         if item.get("sport_type", item.get("type")) in {"Run", "VirtualRun", "TrailRun"}
     ]
+
+
+async def get_run_descent(activity_id: str) -> float | None:
+    credential = await _service_token("strava")
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.get(
+            f"https://www.strava.com/api/v3/activities/{quote(activity_id, safe='')}/streams",
+            headers={"Authorization": f"Bearer {credential['access_token']}"},
+            params={"keys": "altitude", "key_by_type": "true"},
+        )
+        response.raise_for_status()
+    altitude = response.json().get("altitude", {}).get("data", [])
+    if len(altitude) < 2:
+        return None
+    descent = sum(max(previous - current, 0) for previous, current in zip(altitude, altitude[1:]))
+    return round(descent, 1)
 
 
 async def get_training_sheet() -> dict:
@@ -90,16 +110,56 @@ async def get_training_sheet() -> dict:
         raise RuntimeError("Set GOOGLE_SHEET_ID in .env before connecting a training Sheet.")
     credential = await _service_token("google")
     sheet_range = os.getenv("GOOGLE_SHEET_RANGE", "Training!A1:Z100")
-    url = (
-        "https://sheets.googleapis.com/v4/spreadsheets/"
-        f"{quote(spreadsheet_id, safe='')}/values/{quote(sheet_range, safe='!:$')}"
-    )
+    url = f"https://sheets.googleapis.com/v4/spreadsheets/{quote(spreadsheet_id, safe='')}"
     async with httpx.AsyncClient(timeout=20) as client:
         response = await client.get(
             url,
             headers={"Authorization": f"Bearer {credential['access_token']}"},
-            params={"valueRenderOption": "FORMATTED_VALUE"},
+            params={
+                "ranges": sheet_range,
+                "includeGridData": "true",
+                "fields": "sheets(properties(title),data(startRow,rowData(values(formattedValue,effectiveFormat(backgroundColor)))))",
+            },
         )
         response.raise_for_status()
     payload = response.json()
-    return {"range": payload.get("range", sheet_range), "rows": payload.get("values", [])}
+    sheets = payload.get("sheets", [])
+    sheet = sheets[0] if sheets else {}
+    grid = (sheet.get("data") or [{}])[0]
+    start_row = grid.get("startRow", 0)
+    rows = []
+    for row_offset, row in enumerate(grid.get("rowData", [])):
+        cells = row.get("values", [])
+        values = [cell.get("formattedValue", "") for cell in cells]
+        completed = any(
+            _is_light_blue(cell.get("effectiveFormat", {}).get("backgroundColor", {}))
+            for cell in cells
+        )
+        if not any(values) and not completed:
+            continue
+        rows.append(
+            {
+                "row_number": start_row + row_offset + 1,
+                "values": values,
+                "completed": completed,
+            }
+        )
+    return {
+        "range": sheet_range,
+        "sheet": sheet.get("properties", {}).get("title"),
+        "rows": rows,
+        "completed_count": sum(row["completed"] for row in rows),
+    }
+
+
+def _is_light_blue(color: dict) -> bool:
+    red = color.get("red", 1)
+    green = color.get("green", 1)
+    blue = color.get("blue", 1)
+    return (
+        red >= 0.60
+        and green >= 0.70
+        and blue >= 0.75
+        and blue - red >= 0.08
+        and blue - green >= 0.02
+    )

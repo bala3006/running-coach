@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f3f6f3" />
+    <link rel="icon" type="image/png" href="/static/thunai-ai-icon.png" />
     <title>Thunai AI · Coach Eklavya</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
@@ -11,7 +12,7 @@
     <div class="app-shell">
       <header class="topbar">
         <a class="wordmark" href="/" aria-label="Thunai AI home">
-          <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <img class="brand-icon" src="/static/thunai-ai-icon.png" alt="" />
           <span>Thunai AI</span>
         </a>
         <div class="topbar-right">
@@ -56,7 +57,10 @@
               <p class="eyebrow">COACH EKLAVYA</p>
               <h2>Ready when you are<span class="period">.</span></h2>
             </div>
-            <span class="model-state" id="model-status"><span class="status-dot status-muted"></span>Checking Ollama</span>
+            <div class="coach-tools">
+              <button class="outline-button" id="training-log-button" type="button">Training log</button>
+              <span class="model-state" id="model-status"><span class="status-dot status-muted"></span>Checking Ollama</span>
+            </div>
           </div>
 
           <div class="conversation" id="conversation" aria-live="polite">
@@ -98,6 +102,45 @@
           <p class="safety-line">Training guidance, not medical care. Listen to your body.</p>
         </section>
       </main>
+
+      <dialog id="training-dialog" class="settings-dialog training-dialog">
+        <form method="dialog" class="dialog-top"><div><p class="eyebrow">LOCAL TRAINING MEMORY</p><h2>Your training log<span class="period">.</span></h2></div><button class="icon-button close-button" aria-label="Close training log">×</button></form>
+        <section class="training-section">
+          <div class="training-section-heading"><div><h3>Recent Strava runs</h3><p>Sync read-only activity details into your local training memory.</p></div><div class="training-actions"><button class="outline-button" id="sync-runs-button" type="button">Sync last 30 days</button><button class="outline-button" id="reindex-memory-button" type="button" disabled>Index local memories</button></div></div>
+          <p class="training-status" id="memory-index-status" role="status"></p>
+          <p class="training-status" id="training-sync-status" role="status"></p>
+          <ol class="training-list" id="run-history"></ol>
+        </section>
+        <section class="training-section">
+          <h3>Run reflection</h3>
+          <form id="reflection-form" class="training-form">
+            <label>Run<select id="run-select" required><option value="">Sync a run first</option></select></label>
+            <div class="training-grid">
+              <label>How did it feel?<select id="run-feeling"><option value="">Choose</option><option>Fresh</option><option>Good</option><option>Okay</option><option>Tired</option><option>Heavy legs</option><option>Uncomfortable</option></select></label>
+              <label>Effort (1–10)<input id="run-effort" type="number" min="1" max="10" step="1" /></label>
+              <label>Temperature (°C)<input id="run-temperature" type="number" min="-50" max="60" step="0.1" /></label>
+              <label>Humidity (%)<input id="run-humidity" type="number" min="0" max="100" step="1" /></label>
+            </div>
+            <label>Notes<textarea id="run-notes" rows="3" maxlength="2000" placeholder="Sleep, soreness, route conditions, or anything you noticed"></textarea></label>
+            <div class="training-form-actions"><button class="outline-button" id="save-reflection-button" type="submit" disabled>Save reflection</button><span class="training-status" id="reflection-status" role="status"></span></div>
+          </form>
+          <p class="dialog-footnote">Weather fields are optional. Temperature may come from Strava; humidity can be entered here. No location is sent to a weather service.</p>
+        </section>
+        <section class="training-section">
+          <h3>Race target</h3>
+          <form id="race-form" class="training-form">
+            <div class="training-grid training-grid-race">
+              <label>Event<input id="race-name" type="text" maxlength="120" required placeholder="Spring Half Marathon" /></label>
+              <label>Race date<input id="race-date" type="date" required /></label>
+              <label>Distance (km)<input id="race-distance" type="number" min="0.1" max="1000" step="0.001" required placeholder="21.097" /></label>
+              <label>Target time<input id="race-time" type="time" step="1" required /></label>
+            </div>
+            <div class="training-form-actions"><button class="outline-button" type="submit">Save race target</button><span class="training-status" id="race-status" role="status"></span></div>
+          </form>
+          <ol class="training-list" id="race-goals-list"></ol>
+          <p class="dialog-footnote">Projection uses a recent comparable run and the Riegel formula. It is a rough estimate, not a promise or a medical assessment.</p>
+        </section>
+      </dialog>
 
       <dialog id="settings-dialog" class="settings-dialog">
         <form method="dialog" class="dialog-top"><div><p class="eyebrow">LOCAL CONNECTIONS</p><h2>Bring your training in<span class="period">.</span></h2></div><button class="icon-button close-button" aria-label="Close settings">×</button></form>

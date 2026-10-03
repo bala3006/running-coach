@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f3f6f3" />
+    <meta name="description" content="Architecture of Thunai AI Coach Eklavya: a local Ollama running coach with Strava, Google Sheets, hybrid RAG, deterministic training metrics, and race projections." />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Thunai AI · Coach Eklavya Architecture" />
+    <meta property="og:description" content="A local-first running coach architecture: Ollama embeddings, SQLite hybrid retrieval, read-only MCP integrations, and deterministic race-goal projections." />
+    <meta property="og:image" content="/architecture/linkedin.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="1500" />
+    <link rel="icon" type="image/png" href="/static/thunai-ai-icon.png" />
     <title>Architecture · Thunai AI</title>
     <style>
       :root {
@@ -24,7 +32,8 @@
       body { margin: 0; color: var(--ink); background: var(--paper); font-family: var(--sans); }
       a { color: var(--green); }
       .topbar { height: 66px; display: flex; align-items: center; justify-content: space-between; padding: 0 max(24px, calc((100vw - 1120px) / 2)); border-bottom: 1px solid var(--line); }
-      .brand { color: var(--ink); font-weight: 700; text-decoration: none; }
+      .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); font-weight: 700; text-decoration: none; }
+      .brand img { width: 27px; height: 27px; border-radius: 7px; }
       .back-link { font-size: 12px; text-decoration: none; }
       main { width: min(1120px, calc(100% - 48px)); margin: 64px auto 80px; }
       .eyebrow, .node-type, .section-kicker { color: var(--muted); font: 10px var(--mono); letter-spacing: .5px; }
@@ -32,13 +41,16 @@
       h1 { max-width: 720px; margin: 0; font: 500 clamp(38px, 6vw, 64px)/1.04 var(--serif); letter-spacing: 0; }
       h1 em { color: var(--green); font-weight: 500; }
       .intro { max-width: 660px; margin: 18px 0 44px; color: var(--muted); font-size: 15px; line-height: 1.7; }
+      .download-link { display: inline-flex; margin: -25px 0 36px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 4px; color: var(--green); background: var(--panel); font-size: 12px; font-weight: 600; text-decoration: none; }
+      .download-link:hover { background: var(--green-pale); }
       .section-kicker { margin: 0 0 14px; }
       .diagram { padding: 23px; border: 1px solid var(--line); background: var(--panel); }
-      .flow { display: grid; grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1.2fr) 42px minmax(0, 1fr); align-items: stretch; }
+      .flow { display: grid; grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1.1fr) 30px minmax(0, 1.1fr) 30px minmax(0, 1fr); align-items: stretch; }
       .node { min-width: 0; padding: 18px; border: 1px solid var(--line); background: #fff; }
       .node.browser { border-top: 3px solid var(--green); }
       .node.agent { border-top: 3px solid var(--orange); }
       .node.model { border-top: 3px solid #558a70; }
+      .node.memory { border-top: 3px solid #4b8188; }
       .node-type { margin: 0 0 9px; }
       .node h3 { margin: 0 0 7px; font-size: 15px; }
       .node p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
@@ -62,6 +74,7 @@
       .mcp-card strong { color: var(--ink); }
       .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; margin-top: 48px; }
       .content-section { padding-top: 17px; border-top: 2px solid var(--green); }
+      .decision-section { margin-top: 38px; }
       .content-section h2 { margin-bottom: 15px; }
       .content-section ol, .content-section ul { margin: 0; padding-left: 19px; color: #526159; font-size: 13px; line-height: 1.8; }
       .content-section li + li { margin-top: 6px; }
@@ -88,13 +101,14 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="/">Thunai AI</a>
+      <a class="brand" href="/"><img src="/static/thunai-ai-icon.png" alt="" />Thunai AI</a>
       <a class="back-link" href="/">Back to Coach Eklavya ↗</a>
     </header>
     <main>
       <p class="eyebrow">SYSTEM OVERVIEW · LOCAL FIRST</p>
       <h1>Coach Eklavya,<br /><em>under the hood.</em></h1>
-      <p class="intro">Thunai AI connects a local Ollama model to your running context through a small FastAPI host and read-only MCP tools. The model reasons over retrieved activity and sheet data; deterministic code owns training arithmetic.</p>
+      <p class="intro">Thunai AI is a local-first running coach. Coach Eklavya combines Strava activity, athlete reflections, and race goals with Ollama chat and embedding models, SQLite hybrid retrieval, and deterministic training calculations.</p>
+      <a class="download-link" href="/architecture/linkedin.png" download>Download LinkedIn infographic ↓</a>
 
       <section aria-labelledby="runtime-title">
         <p class="section-kicker" id="runtime-title">01 / REQUEST PATH</p>
@@ -108,24 +122,30 @@
             <div class="connector" aria-label="HTTP request"><span>HTTP</span></div>
             <article class="node agent">
               <p class="node-type">LOCAL APPLICATION</p>
-              <h3>FastAPI agent host</h3>
-              <p>Validates chat, loads session history, builds the coach prompt, invokes MCP tools, and filters unsafe or unsupported output.</p>
+              <h3>FastAPI coach host</h3>
+              <p>Validates requests, coordinates retrieval and MCP tools, applies safety boundaries, and assembles evidence for the coach.</p>
             </article>
-            <div class="connector" aria-label="Local Ollama API"><span>API</span></div>
+            <div class="connector" aria-label="Embedding and retrieval"><span>SEARCH</span></div>
+            <article class="node memory">
+              <p class="node-type">LOCAL RETRIEVAL</p>
+              <h3>Hybrid training memory</h3>
+              <p>Ollama creates query embeddings. SQLite combines cosine similarity over stored vectors with FTS5 keyword ranking.</p>
+            </article>
+            <div class="connector" aria-label="Retrieved context"><span>CONTEXT</span></div>
             <article class="node model">
-              <p class="node-type">LOCAL MODEL</p>
-              <h3>Ollama</h3>
-              <p>Generates coaching responses and requests tools when useful. Model weights remain on the user's machine.</p>
+              <p class="node-type">LOCAL MODELS · OLLAMA</p>
+              <h3>Coach and embedder</h3>
+              <p>Llama 3.2 writes responses; nomic-embed-text maps questions and training records into vectors. Both run on the user's machine.</p>
             </article>
           </div>
           <div class="data-row">
             <article class="data-node">
-              <h3>SQLite conversation history</h3>
-              <p>Local message history is keyed by browser session and stored at <code>~/.running-coach/coach.sqlite3</code> by default.</p>
+              <h3>SQLite training memory</h3>
+              <p>Conversation history, synced activities, reflections, race goals, FTS5 text, and versioned float32 vectors stay at <code>~/.running-coach/coach.sqlite3</code> by default.</p>
             </article>
             <article class="data-node">
               <h3>Deterministic training metrics</h3>
-              <p>Distance, duration, and average pace summaries are calculated in Python before the model explains them.</p>
+              <p>Distance, duration, pace summaries, and Riegel race-time projections are calculated in Python before the model explains them.</p>
             </article>
           </div>
 
@@ -138,12 +158,12 @@
               <article class="mcp-card">
                 <p class="node-type">MCP SERVER · READ ONLY</p>
                 <h3>Strava</h3>
-                <p>Exposes recent running activities. The Python adapter fetches activity data from the Strava API and returns a deterministic summary with the rows.</p>
+                <p>Fetches recent run summaries and altitude streams. The app persists distance, time, heart rate, ascent, descent, and available temperature in local training memory.</p>
               </article>
               <article class="mcp-card">
                 <p class="node-type">MCP SERVER · READ ONLY</p>
                 <h3>Google Sheets</h3>
-                <p>Reads the configured profile or training-plan range from the Sheets API. No write tools are registered.</p>
+                <p>Reads the configured profile or plan range plus effective cell fill colors. Rows with light-blue cells are marked completed; no write tools are registered.</p>
               </article>
             </div>
           </div>
@@ -156,29 +176,42 @@
           <h2>One turn</h2>
           <ol>
             <li>The browser sends a message, session ID, language, and voice preference to FastAPI.</li>
-            <li>The host adds recent local conversation history and discovers tools from both MCP servers.</li>
-            <li>Ollama responds directly or requests a bounded number of read-only tool calls.</li>
-            <li>The host returns tool results to Ollama, filters unsupported citations and generated Tamil in English-first mode, then saves the exchange locally.</li>
+            <li>The local embedder encodes the query; hybrid search ranks stored activity and reflection records with vector similarity and FTS5.</li>
+            <li>For explicit marathon-goal questions, Python returns a deterministic report from recent Strava runs and the training sheet. Other questions add retrieved evidence, conversation history, and available MCP tools to the coach request.</li>
+            <li>Llama 3.2 responds or requests bounded read-only tools. The host executes registered tools even if the model emits their call payload as text, then saves the final exchange locally.</li>
           </ol>
         </section>
         <section class="content-section">
           <p class="section-kicker">03 / TRUST BOUNDARIES</p>
           <h2>What leaves the machine</h2>
           <ul>
-            <li>Chat prompts and conversation history go to the configured local Ollama endpoint.</li>
-            <li>Strava and Google receive their own read-only API requests when the coach calls a tool.</li>
+            <li>Chat prompts, retrieved training memories, and conversation history go to the configured local Ollama endpoint; no hosted LLM or embedding API is used.</li>
+            <li>Embedding vectors, source records, and FTS indexes remain in local SQLite. The embedding model name is recorded per vector for safe re-indexing.</li>
+            <li>Strava and Google receive their own read-only API requests when the runner syncs activities or the coach calls an integration tool.</li>
             <li>OAuth access and refresh tokens are stored in the operating system credential store.</li>
             <li>The app does not call a hosted LLM and exposes no plan-write or sheet-write tools.</li>
+            <li>Run temperature and humidity are stored locally; no route location is sent to a weather service.</li>
           </ul>
         </section>
       </div>
+
+      <section class="content-section decision-section">
+        <p class="section-kicker">04 / DESIGN DECISIONS</p>
+        <h2>Why hybrid local retrieval</h2>
+        <ul>
+          <li>Embeddings connect meaning across free-text reflections, so “heavy legs” can be found by a question about fatigue.</li>
+          <li>FTS5 preserves exact lookup for dates, distances, weather values, and activity names. Reciprocal-rank fusion combines both retrieval lists.</li>
+          <li>All vectors stay beside their source records in SQLite. If the embedding model is unavailable, keyword retrieval still works.</li>
+          <li>Race projections stay deterministic and show their source run; the model explains the estimate but does not calculate it or promise a result.</li>
+        </ul>
+      </section>
 
       <aside class="privacy-band">
         <h2>Safety boundary</h2>
         <p>Coach Eklavya provides training guidance, not medical care. It does not diagnose injuries. For concerning symptoms it should advise stopping and seeking professional care. The integrations start read-only, and the model cannot edit your training plan.</p>
       </aside>
 
-      <footer><span>THUNAI AI · COACH EKLAVYA</span><span>LOCAL BY DEFAULT · MCP READ TOOLS</span></footer>
+      <footer><span>THUNAI AI · COACH EKLAVYA</span><span>LOCAL OLLAMA · HYBRID RAG · MCP READ TOOLS</span></footer>
     </main>
   </body>
 </html>

@@ -27,6 +27,14 @@ def test_tamil_voice_is_respectful_and_localized() -> None:
     assert "diagnose injuries" in prompt
 
 
+def test_prompt_infers_today_and_race_history_windows() -> None:
+    prompt = build_system_prompt("en", tamil_voice=False)
+
+    assert "today's run, use a one-day Strava window" in prompt
+    assert "race-goal analysis, use up to 90 days" in prompt
+    assert "never show tool-call JSON" in prompt
+
+
 def test_unsupported_language_is_rejected() -> None:
     with pytest.raises(ValueError, match="Unsupported coach language"):
         build_system_prompt("fr", tamil_voice=False)
